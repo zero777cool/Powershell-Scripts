@@ -1,4 +1,4 @@
-# Rance Timber AD Toolkit
+# AD Toolkit
 
 A menu-driven launcher for Active Directory reporting scripts. Run `ADToolkit.ps1` and pick a
 command from the menu instead of remembering separate script names/paths.
