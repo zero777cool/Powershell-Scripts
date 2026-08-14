@@ -7,8 +7,8 @@
     the newest value for each user. The report contains only SamAccountName, Enabled, and LastLogon.
 
     Enabled users are displayed first in alphabetical order, followed by disabled users in alphabetical
-    order. LastLogon is displayed as a date only (yyyy-MM-dd). The toolkit does not include time values
-    in reports unless explicitly requested.
+    order. LastLogon is displayed as a date only using the toolkit-wide `dd MMM yyyy` format.
+    The toolkit does not include time values in reports unless explicitly requested.
 
     Output is always written beneath ADToolkit\Reports\AllUserLogonReport, regardless of the current
     working directory.
@@ -76,7 +76,7 @@ function Invoke-AllUserLogonReport {
             [PSCustomObject]@{
                 SamAccountName = $_.SamAccountName
                 Enabled        = $_.Enabled
-                LastLogon      = if ($_.LastLogon) { $_.LastLogon.ToString('yyyy-MM-dd') } else { $null }
+                LastLogon      = if ($_.LastLogon) { $_.LastLogon.ToString($ADToolkitConfig.ReportDateFormat) } else { $null }
             }
         })
 
