@@ -1,10 +1,13 @@
 <#
 .SYNOPSIS
-    Reports every Active Directory user with enabled status and exact LastLogon time.
+    Reports every Active Directory user with enabled status and LastLogon date.
 
 .DESCRIPTION
     Queries every reachable Domain Controller for the non-replicated LastLogon attribute and keeps
     the newest value for each user. The report contains only SamAccountName, Enabled, and LastLogon.
+
+    LastLogon is displayed as a date only (yyyy-MM-dd). The toolkit does not include time values in
+    reports unless explicitly requested.
 
     Output is always written beneath ADToolkit\Reports\AllUserLogonReport, regardless of the current
     working directory.
@@ -24,7 +27,7 @@ function Invoke-AllUserLogonReport {
         $null = New-Item -Path $OutputDirectory -ItemType Directory -Force
     }
 
-    $OutputPath = Join-Path -Path $OutputDirectory -ChildPath "$($ADToolkitConfig.AllUserLogonReport.OutputFilePrefix)_$(Get-Date -Format 'yyyyMMdd_HHmmss').csv"
+    $OutputPath = Join-Path -Path $OutputDirectory -ChildPath "$($ADToolkitConfig.AllUserLogonReport.OutputFilePrefix)_$(Get-Date -Format 'yyyyMMdd').csv"
 
     try {
         $DomainControllers = @(Get-ADDomainController -Filter * -ErrorAction Stop)
@@ -52,11 +55,11 @@ function Invoke-AllUserLogonReport {
                     $UsersBySamAccountName[$User.SamAccountName] = [PSCustomObject]@{
                         SamAccountName = $User.SamAccountName
                         Enabled        = $User.Enabled
-                        LastLogon      = if ($User.LastLogon) { [DateTime]::FromFileTime($User.LastLogon) } else { $null }
+                        LastLogon      = if ($User.LastLogon) { [DateTime]::FromFileTime($User.LastLogon).Date } else { $null }
                     }
                 }
-                elseif ($User.LastLogon -and ($null -eq $Existing.LastLogon -or [DateTime]::FromFileTime($User.LastLogon) -gt $Existing.LastLogon)) {
-                    $Existing.LastLogon = [DateTime]::FromFileTime($User.LastLogon)
+                elseif ($User.LastLogon -and ($null -eq $Existing.LastLogon -or [DateTime]::FromFileTime($User.LastLogon).Date -gt $Existing.LastLogon)) {
+                    $Existing.LastLogon = [DateTime]::FromFileTime($User.LastLogon).Date
                 }
             }
         }
@@ -69,7 +72,7 @@ function Invoke-AllUserLogonReport {
         [PSCustomObject]@{
             SamAccountName = $_.SamAccountName
             Enabled        = $_.Enabled
-            LastLogon      = if ($_.LastLogon) { $_.LastLogon.ToString('yyyy-MM-dd HH:mm:ss') } else { $null }
+            LastLogon      = if ($_.LastLogon) { $_.LastLogon.ToString('yyyy-MM-dd') } else { $null }
         }
     })
 
