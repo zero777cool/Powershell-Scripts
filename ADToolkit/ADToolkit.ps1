@@ -27,6 +27,7 @@ $RequiredToolkitFiles = @(
     'Functions\Common.ps1'
     'Functions\Invoke-InactiveUserReport.ps1'
     'Functions\Invoke-ADPrivilegeAudit.ps1'
+    'Functions\Invoke-AllUserLogonReport.ps1'
 )
 
 foreach ($RelativePath in $RequiredToolkitFiles) {
@@ -78,6 +79,12 @@ $MenuItems = @(
         Title       = 'AD Privilege Audit'
         Description = 'Audit privileged AD groups and local Administrators across domain computers'
         Action      = { Invoke-ADPrivilegeAudit }
+    }
+    [PSCustomObject]@{
+        Key         = '3'
+        Title       = 'All User Logon Report'
+        Description = 'List every domain user with enabled status and exact LastLogon time'
+        Action      = { Invoke-AllUserLogonReport }
     }
 )
 
