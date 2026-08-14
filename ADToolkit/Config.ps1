@@ -13,6 +13,7 @@ Do not add time values to reports unless explicitly requested.
 
 $ADToolkitRoot = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Path }
 $ADToolkitReportsRoot = Join-Path -Path $ADToolkitRoot -ChildPath 'Reports'
+$ADToolkitReportRoot = $ADToolkitReportsRoot
 
 $ADToolkitConfig = [ordered]@{
     RootDirectory    = $ADToolkitRoot
@@ -46,5 +47,11 @@ $ADToolkitConfig = [ordered]@{
     AllUserLogonReport = [ordered]@{
         OutputDirectoryName = 'AllUserLogonReport'
         OutputFilePrefix    = 'ADToolkit-AllUserLogons'
+    }
+
+    M365AccountComparison = [ordered]@{
+        OutputDirectoryName = 'M365AccountComparison'
+        OutputFilePrefix    = 'ADToolkit-M365AccountComparison'
+        GraphScopes         = @('User.Read.All')
     }
 }
