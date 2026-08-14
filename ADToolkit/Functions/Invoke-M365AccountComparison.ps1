@@ -7,8 +7,11 @@
     compares each on-premises AD user's SamAccountName with the Microsoft Graph
     onPremisesSamAccountName property.
 
+    The report is designed for both IT and HR review. CSV headings use plain-language terms
+    while retaining the underlying account identifiers needed for reconciliation.
+
     The report identifies whether each on-premises account has a corresponding Microsoft 365
-    user and shows the Microsoft 365 UPN, enabled state, and synchronization state.
+    user and shows the Microsoft 365 sign-in name, enabled state, and synchronization state.
 
     This report is read-only. It does not create, modify, disable, or delete Microsoft 365 users.
 
@@ -75,16 +78,16 @@ function Invoke-M365AccountComparison {
         $M365User = $M365Lookup[$Key]
 
         [PSCustomObject]@{
-            SamAccountName = $AdUser.SamAccountName
-            'AD Enabled' = $AdUser.Enabled
-            'M365 Account' = if ($M365User) { 'YES' } else { 'NO' }
-            'M365 UPN' = if ($M365User) { $M365User.UserPrincipalName } else { '' }
-            'M365 Enabled' = if ($M365User) { $M365User.AccountEnabled } else { $null }
-            'M365 Synced' = if ($M365User) { $M365User.OnPremisesSyncEnabled } else { $null }
+            'AD Network Username' = $AdUser.SamAccountName
+            'AD Account Status' = if ($AdUser.Enabled) { 'Enabled' } else { 'Disabled' }
+            'Microsoft 365 Account Exists' = if ($M365User) { 'Yes' } else { 'No' }
+            'Microsoft 365 Sign-In Name' = if ($M365User) { $M365User.UserPrincipalName } else { '' }
+            'Microsoft 365 Account Status' = if ($M365User) { if ($M365User.AccountEnabled) { 'Enabled' } else { 'Disabled' } } else { 'Not Applicable' }
+            'Microsoft 365 Account Synced from AD' = if ($M365User) { if ($M365User.OnPremisesSyncEnabled) { 'Yes' } else { 'No' } } else { 'Not Applicable' }
         }
     }
 
-    $Results = $Results | Sort-Object @{ Expression = { if ($_.'AD Enabled') { 0 } else { 1 } } }, SamAccountName
+    $Results = $Results | Sort-Object @{ Expression = { if ($_.'AD Account Status' -eq 'Enabled') { 0 } else { 1 } } }, 'AD Network Username'
 
     Clear-Host
     Write-Host ''
@@ -93,14 +96,14 @@ function Invoke-M365AccountComparison {
     Write-Host ''
     Write-Host "Microsoft 365 users retrieved: $($M365Users.Count)" -ForegroundColor $Theme.Text
     Write-Host "On-premises AD users retrieved: $($AdUsers.Count)" -ForegroundColor $Theme.Text
-    Write-Host "AD users with M365 accounts: $(($Results | Where-Object { $_.'M365 Account' -eq 'YES' }).Count)" -ForegroundColor $Theme.Success
-    Write-Host "AD users without M365 accounts: $(($Results | Where-Object { $_.'M365 Account' -eq 'NO' }).Count)" -ForegroundColor $Theme.Warn
+    Write-Host "AD users with M365 accounts: $(($Results | Where-Object { $_.'Microsoft 365 Account Exists' -eq 'Yes' }).Count)" -ForegroundColor $Theme.Success
+    Write-Host "AD users without M365 accounts: $(($Results | Where-Object { $_.'Microsoft 365 Account Exists' -eq 'No' }).Count)" -ForegroundColor $Theme.Warn
     Write-Host ''
 
-    Show-BorderedTable -InputObject $Results -Columns @('SamAccountName','AD Enabled','M365 Account','M365 UPN','M365 Enabled','M365 Synced')
+    Show-BorderedTable -InputObject $Results -Columns @('AD Network Username','AD Account Status','Microsoft 365 Account Exists','Microsoft 365 Sign-In Name','Microsoft 365 Account Status','Microsoft 365 Account Synced from AD')
 
     if (-not $OutputCsvPath) {
-        $OutputCsvPath = Join-Path $ADToolkitReportRoot "M365AccountComparison\ADToolkit-M365AccountComparison_$(Get-Date -Format 'yyyyMMdd').csv"
+        $OutputCsvPath = Join-Path $ADToolkitConfig.ReportsDirectory "M365AccountComparison\ADToolkit-M365AccountComparison_$(Get-Date -Format 'yyyyMMdd').csv"
     }
 
     $OutputDirectory = Split-Path -Parent $OutputCsvPath
