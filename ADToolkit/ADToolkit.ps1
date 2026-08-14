@@ -6,6 +6,9 @@
     Loads shared configuration/helpers and feature commands, then presents a menu for running
     read-only Active Directory reports. Each feature lives in its own Functions\Invoke-*.ps1 file.
 
+    All generated reports and audit logs are rooted beneath ADToolkit\Reports, independent of the
+    directory from which this launcher is started.
+
     New features should expose exactly one public Invoke-* function per file and keep private
     helper functions inside that feature file.
 
@@ -37,6 +40,25 @@ foreach ($RelativePath in $RequiredToolkitFiles) {
         exit 1
     }
     . $FullPath
+}
+
+# The privilege-audit feature historically initialized its output paths from its own Functions
+# directory. Override that initialization at the launcher level so every menu-launched feature
+# writes beneath the toolkit root, never beneath the caller's current working directory.
+function Initialize-AuditDirectories {
+    [CmdletBinding()]
+    param()
+
+    $AuditConfig = $ADToolkitConfig.ADPrivilegeAudit
+    $script:AuditDirectory = Join-Path -Path $ADToolkitConfig.ReportsDirectory -ChildPath $AuditConfig.OutputDirectoryName
+    $script:LogDirectory = Join-Path -Path $script:AuditDirectory -ChildPath $AuditConfig.LogDirectoryName
+    $script:LogPath = Join-Path -Path $script:LogDirectory -ChildPath "ADToolkit-PrivilegeAudit_$($script:RunStamp).log"
+
+    foreach ($Directory in @($script:AuditDirectory, $script:LogDirectory)) {
+        if (-not (Test-Path -LiteralPath $Directory)) {
+            $null = New-Item -Path $Directory -ItemType Directory -Force
+        }
+    }
 }
 
 if (-not (Test-ADModuleAvailable)) {
