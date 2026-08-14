@@ -11,7 +11,8 @@
     while retaining the underlying account identifiers needed for reconciliation.
 
     The report identifies whether each on-premises account has a corresponding Microsoft 365
-    user and shows the Microsoft 365 sign-in name, enabled state, and synchronization state.
+    user and shows the user's full name, Microsoft 365 sign-in name, enabled state, and
+    synchronization state.
 
     This report is read-only. It does not create, modify, disable, or delete Microsoft 365 users.
 
@@ -55,8 +56,8 @@ function Invoke-M365AccountComparison {
     }
 
     try {
-        $AdUsers = Get-ADUser -Filter * -Properties Enabled,SamAccountName | Sort-Object SamAccountName
-        $M365Users = Get-MgUser -All -Property 'id,displayName,userPrincipalName,accountEnabled,onPremisesSamAccountName,onPremisesSyncEnabled'
+        $AdUsers = Get-ADUser -Filter * -Properties Enabled,SamAccountName,GivenName,Surname,Name | Sort-Object SamAccountName
+        $M365Users = Get-MgUser -All -Property 'id,displayName,givenName,surname,userPrincipalName,accountEnabled,onPremisesSamAccountName,onPremisesSyncEnabled'
     }
     catch {
         Write-Host "Failed to retrieve account data: $_" -ForegroundColor $Theme.Error
@@ -77,7 +78,18 @@ function Invoke-M365AccountComparison {
         $Key = $AdUser.SamAccountName.ToLowerInvariant()
         $M365User = $M365Lookup[$Key]
 
+        $FullName = if ($M365User -and -not [string]::IsNullOrWhiteSpace($M365User.DisplayName)) {
+            $M365User.DisplayName
+        }
+        elseif ($AdUser.GivenName -or $AdUser.Surname) {
+            (@($AdUser.GivenName, $AdUser.Surname) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }) -join ' '
+        }
+        else {
+            $AdUser.Name
+        }
+
         [PSCustomObject]@{
+            'Full Name' = $FullName
             'AD Network Username' = $AdUser.SamAccountName
             'AD Account Status' = if ($AdUser.Enabled) { 'Enabled' } else { 'Disabled' }
             'Microsoft 365 Account Exists' = if ($M365User) { 'Yes' } else { 'No' }
@@ -87,7 +99,7 @@ function Invoke-M365AccountComparison {
         }
     }
 
-    $Results = $Results | Sort-Object @{ Expression = { if ($_.'AD Account Status' -eq 'Enabled') { 0 } else { 1 } } }, 'AD Network Username'
+    $Results = $Results | Sort-Object @{ Expression = { if ($_.'AD Account Status' -eq 'Enabled') { 0 } else { 1 } } }, 'Full Name', 'AD Network Username'
 
     Clear-Host
     Write-Host ''
@@ -100,7 +112,7 @@ function Invoke-M365AccountComparison {
     Write-Host "AD users without M365 accounts: $(($Results | Where-Object { $_.'Microsoft 365 Account Exists' -eq 'No' }).Count)" -ForegroundColor $Theme.Warn
     Write-Host ''
 
-    Show-BorderedTable -InputObject $Results -Columns @('AD Network Username','AD Account Status','Microsoft 365 Account Exists','Microsoft 365 Sign-In Name','Microsoft 365 Account Status','Microsoft 365 Account Synced from AD')
+    Show-BorderedTable -InputObject $Results -Columns @('Full Name','AD Network Username','AD Account Status','Microsoft 365 Account Exists','Microsoft 365 Sign-In Name','Microsoft 365 Account Status','Microsoft 365 Account Synced from AD')
 
     if (-not $OutputCsvPath) {
         $OutputCsvPath = Join-Path $ADToolkitConfig.ReportsDirectory "M365AccountComparison\ADToolkit-M365AccountComparison_$(Get-Date -Format 'yyyyMMdd').csv"
