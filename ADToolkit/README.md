@@ -11,7 +11,8 @@ ADToolkit/
 ├── Functions/
 │   ├── Common.ps1                       <- shared theme, HTML CSS, and helper functions
 │   ├── Invoke-InactiveUserReport.ps1    <- inactive account report
-│   └── Invoke-ADPrivilegeAudit.ps1      <- privileged access audit
+│   ├── Invoke-ADPrivilegeAudit.ps1      <- privileged access audit
+│   └── Invoke-AllUserLogonReport.ps1    <- all users and exact LastLogon report
 ├── Reports/                             <- generated reports/logs; never committed
 ├── Tests/
 │   └── Validate-ADToolkit.ps1           <- lightweight static validation
@@ -32,13 +33,10 @@ Requires the ActiveDirectory PowerShell module (RSAT-AD-PowerShell). The toolkit
 ```text
 ADToolkit\Reports\
 ├── InactiveUserReport\
-│   ├── ADToolkit-InactiveUsers_yyyyMMdd.csv
-│   └── ADToolkit-InactiveUsers_yyyyMMdd.html
-└── ADPrivilegeAudit\
-    ├── *.csv
-    ├── *.xlsx
-    └── Logs\
-        └── *.log
+├── ADPrivilegeAudit\
+│   └── Logs\
+└── AllUserLogonReport\
+    └── ADToolkit-AllUserLogons_yyyyMMdd_HHmmss.csv
 ```
 
 The `Reports` tree is excluded by the repository `.gitignore` and must never be committed.
@@ -56,6 +54,18 @@ Default output names use the `ADToolkit-InactiveUsers_yyyyMMdd` prefix.
 Runs `Invoke-ADPrivilegeAudit` and audits privileged AD groups, nested membership paths, and local Administrators membership on enabled domain computers. The audit is read-only and produces CSV reports; an Excel workbook is also produced when `ImportExcel` is available.
 
 The audit requires PowerShell 5.1+, the ActiveDirectory/RSAT module, and remote CIM/DCOM access for the local Administrators scan.
+
+### 3. All User Logon Report
+
+Runs `Invoke-AllUserLogonReport` and lists every domain user with only:
+
+- `SamAccountName`
+- `Enabled`
+- `LastLogon`
+
+The report uses the exact, non-replicated `LastLogon` attribute. Because `LastLogon` is maintained independently on each Domain Controller, the command queries every reachable Domain Controller and keeps the newest value for each account.
+
+The CSV is written to `ADToolkit\Reports\AllUserLogonReport` regardless of where the toolkit is launched from.
 
 ## Configuration
 
@@ -84,6 +94,7 @@ Examples:
 ```text
 Invoke-InactiveUserReport.ps1 -> Invoke-InactiveUserReport
 Invoke-ADPrivilegeAudit.ps1   -> Invoke-ADPrivilegeAudit
+Invoke-AllUserLogonReport.ps1 -> Invoke-AllUserLogonReport
 ```
 
 Do not introduce legacy names such as `Audit-ADPrivileges.ps1` for new commands.
