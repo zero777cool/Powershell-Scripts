@@ -12,6 +12,7 @@ ADToolkit/
 │   ├── Common.ps1                       <- shared theme, HTML CSS, and helper functions
 │   ├── Invoke-InactiveUserReport.ps1    <- inactive account report
 │   └── Invoke-ADPrivilegeAudit.ps1      <- privileged access audit
+├── Reports/                             <- generated reports/logs; never committed
 ├── Tests/
 │   └── Validate-ADToolkit.ps1           <- lightweight static validation
 ├── DEVELOPMENT.md                       <- architecture and LLM development rules
@@ -25,6 +26,22 @@ ADToolkit/
 ```
 
 Requires the ActiveDirectory PowerShell module (RSAT-AD-PowerShell). The toolkit checks for it on startup and tells you if it is missing.
+
+**Run location does not affect report output.** All generated reports and audit logs are written beneath `ADToolkit\Reports` using paths based on the toolkit's own directory, not the current working directory.
+
+```text
+ADToolkit\Reports\
+├── InactiveUserReport\
+│   ├── ADToolkit-InactiveUsers_yyyyMMdd.csv
+│   └── ADToolkit-InactiveUsers_yyyyMMdd.html
+└── ADPrivilegeAudit\
+    ├── *.csv
+    ├── *.xlsx
+    └── Logs\
+        └── *.log
+```
+
+The `Reports` tree is excluded by the repository `.gitignore` and must never be committed.
 
 ## Current commands
 
