@@ -21,9 +21,4 @@ $ADToolkitConfig = [ordered]@{
         )
         OutputFilePrefix     = 'ADToolkit-InactiveUsers'
     }
-
-    ADPrivilegeAudit = [ordered]@{
-        DefaultThrottleLimit = 24
-        OutputFilePrefix     = 'ADToolkit-PrivilegeAudit'
-    }
 }
