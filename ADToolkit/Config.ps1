@@ -38,4 +38,9 @@ $ADToolkitConfig = [ordered]@{
         OutputFilePrefix     = 'ADToolkit-PrivilegeAudit'
         LogDirectoryName     = 'Logs'
     }
+
+    AllUserLogonReport = [ordered]@{
+        OutputDirectoryName = 'AllUserLogonReport'
+        OutputFilePrefix    = 'ADToolkit-AllUserLogons'
+    }
 }
