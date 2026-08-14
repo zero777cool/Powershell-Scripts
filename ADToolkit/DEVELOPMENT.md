@@ -13,7 +13,8 @@ ADToolkit/
 ├── Functions/
 │   ├── Common.ps1
 │   ├── Invoke-InactiveUserReport.ps1
-│   └── Invoke-ADPrivilegeAudit.ps1
+│   ├── Invoke-ADPrivilegeAudit.ps1
+│   └── Invoke-AllUserLogonReport.ps1
 └── Tests/
     └── Validate-ADToolkit.ps1
 ```
@@ -35,6 +36,7 @@ Examples:
 
 - `Invoke-InactiveUserReport.ps1` -> `Invoke-InactiveUserReport`
 - `Invoke-ADPrivilegeAudit.ps1` -> `Invoke-ADPrivilegeAudit`
+- `Invoke-AllUserLogonReport.ps1` -> `Invoke-AllUserLogonReport`
 
 Avoid legacy or inconsistent names such as `Audit-ADPrivileges.ps1` for new toolkit features.
 
@@ -57,9 +59,30 @@ Use clear, consistent parameter names. Where applicable, prefer:
 
 Reports should clearly identify where output was written and should use an `ADToolkit-*` filename prefix by default.
 
+All generated reports and logs must be written beneath `ADToolkit\Reports`, using paths derived from `$PSScriptRoot`/the toolkit root. Never use the current working directory as the default report location.
+
 ## Safety
 
 AD reporting commands should default to read-only operations. Do not add account modification, group membership changes, password resets, deletion, or other write operations without explicitly documenting the behaviour and getting approval for the change.
+
+## Current reports
+
+### All User Logon Report
+
+`Invoke-AllUserLogonReport` lists every domain user with only `SamAccountName`, `Enabled`, and the exact `LastLogon` value. Because `LastLogon` is not replicated, the command queries every reachable Domain Controller and keeps the newest value for each account. The report is written beneath `ADToolkit\Reports\AllUserLogonReport`.
+
+## Planned development environment
+
+The project should eventually have a controlled Windows PowerShell test environment available for deeper testing. This is intentionally deferred for now.
+
+Planned approach:
+
+1. Keep GitHub Actions as the first automated validation layer.
+2. Add a local Windows test runner for tests requiring PowerShell/RSAT and real AD connectivity.
+3. Use the local environment to validate Domain Controller discovery, ActiveDirectory queries, CIM/DCOM access, local Administrators enumeration, and real report generation.
+4. Do not expose WinRM/PowerShell directly to the public internet for this purpose; use a controlled local development/agent mechanism if remote execution is later introduced.
+
+This plan should be revisited soon. Do not remove it from the documentation unless the project direction changes.
 
 ## Validation
 
@@ -88,6 +111,8 @@ When another LLM modifies this project:
 5. Reuse `Common.ps1` before creating duplicate helpers.
 6. Put shared defaults in `Config.ps1`.
 7. Keep AD operations read-only unless explicitly approved.
-8. Run `Tests\Validate-ADToolkit.ps1` before declaring the change complete.
-9. Keep Pester in mind as the planned future behavioural test framework.
-10. Update documentation when adding or changing a feature.
+8. Keep all generated reports/logs beneath `ADToolkit\Reports` and never default to the caller's current directory.
+9. Run `Tests\Validate-ADToolkit.ps1` before declaring the change complete.
+10. Keep Pester in mind as the planned future behavioural test framework.
+11. Keep the planned Windows local test environment in mind for a later iteration.
+12. Update documentation when adding or changing a feature.
