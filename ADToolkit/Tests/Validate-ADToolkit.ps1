@@ -23,6 +23,7 @@ $RequiredFiles = @(
     'Functions\Invoke-InactiveUserReport.ps1'
     'Functions\Invoke-ADPrivilegeAudit.ps1'
     'Functions\Invoke-AllUserLogonReport.ps1'
+    'Functions\Invoke-M365AccountComparison.ps1'
 )
 
 $Failures = [System.Collections.Generic.List[string]]::new()
