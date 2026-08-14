@@ -46,6 +46,14 @@ Prefer `Config.ps1` for defaults that should be consistent across reports. Do no
 
 Feature parameters should still allow an operator to override a useful runtime setting where appropriate.
 
+## Dates and times
+
+**Toolkit-wide rule:** report date values are date-only by default and use the display format **`dd MMM yyyy`**, for example `14 Aug 2026`.
+
+Do **not** add time values to reports unless the user explicitly requests time. This rule exists so CSV reports remain human-readable and less ambiguous when opened in applications with different regional date settings.
+
+The toolkit may retain timestamps internally where required for calculations or operational logging, but user-facing report fields should not expose time unless explicitly requested.
+
 ## Parameters and output
 
 Use clear, consistent parameter names. Where applicable, prefer:
@@ -70,6 +78,10 @@ AD reporting commands should default to read-only operations. Do not add account
 ### All User Logon Report
 
 `Invoke-AllUserLogonReport` lists every domain user with only `SamAccountName`, `Enabled`, and the exact `LastLogon` value. Because `LastLogon` is not replicated, the command queries every reachable Domain Controller and keeps the newest value for each account. The report is written beneath `ADToolkit\Reports\AllUserLogonReport`.
+
+### Inactive User Report
+
+`Invoke-InactiveUserReport` identifies stale accounts using the configured inactivity period. Its user-facing date fields should follow the toolkit-wide `dd MMM yyyy` date-only rule.
 
 ## Planned development environment
 
@@ -112,7 +124,8 @@ When another LLM modifies this project:
 6. Put shared defaults in `Config.ps1`.
 7. Keep AD operations read-only unless explicitly approved.
 8. Keep all generated reports/logs beneath `ADToolkit\Reports` and never default to the caller's current directory.
-9. Run `Tests\Validate-ADToolkit.ps1` before declaring the change complete.
-10. Keep Pester in mind as the planned future behavioural test framework.
-11. Keep the planned Windows local test environment in mind for a later iteration.
-12. Update documentation when adding or changing a feature.
+9. Use date-only report values in `dd MMM yyyy` format and never add report times unless explicitly requested.
+10. Run `Tests\Validate-ADToolkit.ps1` before declaring the change complete.
+11. Keep Pester in mind as the planned future behavioural test framework.
+12. Keep the planned Windows local test environment in mind for a later iteration.
+13. Update documentation when adding or changing a feature.
