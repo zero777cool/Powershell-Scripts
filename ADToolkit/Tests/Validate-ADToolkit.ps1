@@ -22,6 +22,7 @@ $RequiredFiles = @(
     'Functions\Common.ps1'
     'Functions\Invoke-InactiveUserReport.ps1'
     'Functions\Invoke-ADPrivilegeAudit.ps1'
+    'Functions\Invoke-AllUserLogonReport.ps1'
 )
 
 $Failures = [System.Collections.Generic.List[string]]::new()
