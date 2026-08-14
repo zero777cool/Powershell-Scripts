@@ -6,8 +6,9 @@
     Queries every reachable Domain Controller for the non-replicated LastLogon attribute and keeps
     the newest value for each user. The report contains only SamAccountName, Enabled, and LastLogon.
 
-    LastLogon is displayed as a date only (yyyy-MM-dd). The toolkit does not include time values in
-    reports unless explicitly requested.
+    Enabled users are displayed first in alphabetical order, followed by disabled users in alphabetical
+    order. LastLogon is displayed as a date only (yyyy-MM-dd). The toolkit does not include time values
+    in reports unless explicitly requested.
 
     Output is always written beneath ADToolkit\Reports\AllUserLogonReport, regardless of the current
     working directory.
@@ -55,11 +56,11 @@ function Invoke-AllUserLogonReport {
                     $UsersBySamAccountName[$User.SamAccountName] = [PSCustomObject]@{
                         SamAccountName = $User.SamAccountName
                         Enabled        = $User.Enabled
-                        LastLogon      = if ($User.LastLogon) { [DateTime]::FromFileTime($User.LastLogon).Date } else { $null }
+                        LastLogon      = if ($User.LastLogon) { [DateTime]::FromFileTime($User.LastLogon) } else { $null }
                     }
                 }
-                elseif ($User.LastLogon -and ($null -eq $Existing.LastLogon -or [DateTime]::FromFileTime($User.LastLogon).Date -gt $Existing.LastLogon)) {
-                    $Existing.LastLogon = [DateTime]::FromFileTime($User.LastLogon).Date
+                elseif ($User.LastLogon -and ($null -eq $Existing.LastLogon -or [DateTime]::FromFileTime($User.LastLogon) -gt $Existing.LastLogon)) {
+                    $Existing.LastLogon = [DateTime]::FromFileTime($User.LastLogon)
                 }
             }
         }
@@ -68,13 +69,16 @@ function Invoke-AllUserLogonReport {
         }
     }
 
-    $Results = @($UsersBySamAccountName.Values | Sort-Object SamAccountName | ForEach-Object {
-        [PSCustomObject]@{
-            SamAccountName = $_.SamAccountName
-            Enabled        = $_.Enabled
-            LastLogon      = if ($_.LastLogon) { $_.LastLogon.ToString('yyyy-MM-dd') } else { $null }
-        }
-    })
+    # Enabled users first, alphabetically by SamAccountName; disabled users second, alphabetically.
+    $Results = @($UsersBySamAccountName.Values |
+        Sort-Object -Property @{ Expression = { if ($_.Enabled) { 0 } else { 1 } } }, SamAccountName |
+        ForEach-Object {
+            [PSCustomObject]@{
+                SamAccountName = $_.SamAccountName
+                Enabled        = $_.Enabled
+                LastLogon      = if ($_.LastLogon) { $_.LastLogon.ToString('yyyy-MM-dd') } else { $null }
+            }
+        })
 
     $Results | Export-Csv -LiteralPath $OutputPath -NoTypeInformation -Encoding UTF8
 
@@ -83,10 +87,17 @@ function Invoke-AllUserLogonReport {
     Write-Host 'Active Directory - All User Logon Report' -ForegroundColor $Theme.Title
     Write-Host ('=' * 42) -ForegroundColor $Theme.Title
     Write-Host ''
-    Write-Host "Users found : $($Results.Count)" -ForegroundColor $Theme.Text
-    Write-Host "DCs queried : $($DomainControllers.Count)" -ForegroundColor $Theme.Text
+    Write-Host "Enabled users : $(($Results | Where-Object Enabled).Count)" -ForegroundColor $Theme.Text
+    Write-Host "Disabled users: $(($Results | Where-Object { -not $_.Enabled }).Count)" -ForegroundColor $Theme.Text
+    Write-Host "DCs queried   : $($DomainControllers.Count)" -ForegroundColor $Theme.Text
     Write-Host ''
-    Show-BorderedTable -InputObject $Results -Columns @('SamAccountName','Enabled','LastLogon')
+    Write-Host 'Enabled Users' -ForegroundColor $Theme.Success
+    Write-Host '-------------' -ForegroundColor $Theme.Success
+    Show-BorderedTable -InputObject @($Results | Where-Object Enabled) -Columns @('SamAccountName','Enabled','LastLogon')
+    Write-Host ''
+    Write-Host 'Disabled Users' -ForegroundColor $Theme.Warn
+    Write-Host '--------------' -ForegroundColor $Theme.Warn
+    Show-BorderedTable -InputObject @($Results | Where-Object { -not $_.Enabled }) -Columns @('SamAccountName','Enabled','LastLogon')
     Write-Host ''
     Write-Host "Report exported to: $OutputPath" -ForegroundColor $Theme.Success
 }
