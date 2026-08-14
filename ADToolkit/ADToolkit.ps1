@@ -28,6 +28,7 @@ $RequiredToolkitFiles = @(
     'Functions\Invoke-InactiveUserReport.ps1'
     'Functions\Invoke-ADPrivilegeAudit.ps1'
     'Functions\Invoke-AllUserLogonReport.ps1'
+    'Functions\Invoke-M365AccountComparison.ps1'
 )
 
 foreach ($RelativePath in $RequiredToolkitFiles) {
@@ -83,8 +84,14 @@ $MenuItems = @(
     [PSCustomObject]@{
         Key         = '3'
         Title       = 'All User Logon Report'
-        Description = 'List every domain user with enabled status and exact LastLogon time'
+        Description = 'List every domain user with enabled status and exact LastLogon date'
         Action      = { Invoke-AllUserLogonReport }
+    }
+    [PSCustomObject]@{
+        Key         = '4'
+        Title       = 'Microsoft 365 Account Comparison'
+        Description = 'Compare AD SamAccountName values with Microsoft 365 / Entra ID synchronized accounts'
+        Action      = { Invoke-M365AccountComparison }
     }
 )
 
