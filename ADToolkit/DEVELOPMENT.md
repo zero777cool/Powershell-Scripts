@@ -14,7 +14,8 @@ ADToolkit/
 │   ├── Common.ps1
 │   ├── Invoke-InactiveUserReport.ps1
 │   ├── Invoke-ADPrivilegeAudit.ps1
-│   └── Invoke-AllUserLogonReport.ps1
+│   ├── Invoke-AllUserLogonReport.ps1
+│   └── Invoke-M365AccountComparison.ps1
 └── Tests/
     └── Validate-ADToolkit.ps1
 ```
@@ -26,7 +27,7 @@ ADToolkit/
 - Each feature file should expose one public `Invoke-*` function whose name matches the filename.
 - Private helper functions should remain inside the feature file unless they are genuinely shared.
 - Feature scripts must not execute their report automatically when dot-sourced.
-- The toolkit is intended to be read-only against Active Directory unless a future feature explicitly documents otherwise.
+- The toolkit is intended to be read-only against Active Directory and Microsoft 365 unless a future feature explicitly documents otherwise.
 
 ## Naming standards
 
@@ -37,6 +38,7 @@ Examples:
 - `Invoke-InactiveUserReport.ps1` -> `Invoke-InactiveUserReport`
 - `Invoke-ADPrivilegeAudit.ps1` -> `Invoke-ADPrivilegeAudit`
 - `Invoke-AllUserLogonReport.ps1` -> `Invoke-AllUserLogonReport`
+- `Invoke-M365AccountComparison.ps1` -> `Invoke-M365AccountComparison`
 
 Avoid legacy or inconsistent names such as `Audit-ADPrivileges.ps1` for new toolkit features.
 
@@ -83,6 +85,14 @@ AD reporting commands should default to read-only operations. Do not add account
 
 `Invoke-InactiveUserReport` identifies stale accounts using the configured inactivity period. Its user-facing date fields should follow the toolkit-wide `dd MMM yyyy` date-only rule.
 
+### Microsoft 365 Account Comparison
+
+`Invoke-M365AccountComparison` compares on-premises AD `SamAccountName` values with Microsoft Graph `onPremisesSamAccountName` values. This is the direct synchronized attribute Microsoft Graph exposes for on-premises `samAccountName` values. citeturn0search3
+
+The feature is read-only and uses interactive delegated Microsoft Graph authentication with `User.Read.All`. It should connect to Graph only when option 4 is selected; the other reports must remain independent of Microsoft Graph. citeturn0search0turn0search7
+
+Do not add Microsoft Graph write permissions to this feature. If future Microsoft 365 functionality requires writes, treat that as a separate, explicitly approved design change.
+
 ## Planned development environment
 
 The project should eventually have a controlled Windows PowerShell test environment available for deeper testing. This is intentionally deferred for now.
@@ -91,7 +101,7 @@ Planned approach:
 
 1. Keep GitHub Actions as the first automated validation layer.
 2. Add a local Windows test runner for tests requiring PowerShell/RSAT and real AD connectivity.
-3. Use the local environment to validate Domain Controller discovery, ActiveDirectory queries, CIM/DCOM access, local Administrators enumeration, and real report generation.
+3. Use the local environment to validate Domain Controller discovery, ActiveDirectory queries, CIM/DCOM access, local Administrators enumeration, real report generation, and Microsoft Graph authentication/API calls.
 4. Do not expose WinRM/PowerShell directly to the public internet for this purpose; use a controlled local development/agent mechanism if remote execution is later introduced.
 
 This plan should be revisited soon. Do not remove it from the documentation unless the project direction changes.
@@ -110,7 +120,7 @@ It checks file presence, naming conventions, duplicate public commands, and Powe
 
 Pester is intentionally **not required yet**. It is a planned later iteration for behavioural/unit tests. Do not remove this note: future LLMs should treat Pester as a planned enhancement rather than introducing a competing test framework.
 
-When Pester is introduced, prefer tests that mock Active Directory calls so tests do not modify or depend on production AD data.
+When Pester is introduced, prefer tests that mock Active Directory and Microsoft Graph calls so tests do not modify or depend on production directory data.
 
 ## LLM instructions
 
@@ -122,7 +132,7 @@ When another LLM modifies this project:
 4. Follow the `Invoke-*` naming convention.
 5. Reuse `Common.ps1` before creating duplicate helpers.
 6. Put shared defaults in `Config.ps1`.
-7. Keep AD operations read-only unless explicitly approved.
+7. Keep AD and Microsoft 365 operations read-only unless explicitly approved.
 8. Keep all generated reports/logs beneath `ADToolkit\Reports` and never default to the caller's current directory.
 9. Use date-only report values in `dd MMM yyyy` format and never add report times unless explicitly requested.
 10. Run `Tests\Validate-ADToolkit.ps1` before declaring the change complete.
