@@ -12,7 +12,8 @@ ADToolkit/
 │   ├── Common.ps1                       <- shared theme, HTML CSS, and helper functions
 │   ├── Invoke-InactiveUserReport.ps1    <- inactive account report
 │   ├── Invoke-ADPrivilegeAudit.ps1      <- privileged access audit
-│   └── Invoke-AllUserLogonReport.ps1    <- all users and exact LastLogon report
+│   ├── Invoke-AllUserLogonReport.ps1    <- all users and exact LastLogon report
+│   └── Invoke-M365AccountComparison.ps1 <- AD to Microsoft 365 account comparison
 ├── Reports/                             <- generated reports/logs; never committed
 ├── Tests/
 │   └── Validate-ADToolkit.ps1           <- lightweight static validation
@@ -35,8 +36,8 @@ ADToolkit\Reports\
 ├── InactiveUserReport\
 ├── ADPrivilegeAudit\
 │   └── Logs\
-└── AllUserLogonReport\
-    └── ADToolkit-AllUserLogons_yyyyMMdd_HHmmss.csv
+├── AllUserLogonReport\
+└── M365AccountComparison\
 ```
 
 The `Reports` tree is excluded by the repository `.gitignore` and must never be committed.
@@ -67,6 +68,31 @@ The report uses the exact, non-replicated `LastLogon` attribute. Because `LastLo
 
 The CSV is written to `ADToolkit\Reports\AllUserLogonReport` regardless of where the toolkit is launched from.
 
+### 4. Microsoft 365 Account Comparison
+
+Runs `Invoke-M365AccountComparison` and compares each on-premises AD `SamAccountName` with the Microsoft Graph `onPremisesSamAccountName` property. Microsoft documents `onPremisesSamAccountName` as the synchronized on-premises `samAccountName` value and notes that it is populated for directories synchronized to Microsoft Entra ID with Microsoft Entra Connect. citeturn0search3
+
+The report shows:
+
+- `SamAccountName`
+- `AD Enabled`
+- `M365 Account`
+- `M365 UPN`
+- `M365 Enabled`
+- `M365 Synced`
+
+Option 4 is read-only. It uses interactive Microsoft Graph PowerShell delegated authentication with `User.Read.All`. Microsoft documents `Connect-MgGraph -Scopes` for interactive delegated authentication and `Get-MgUser -All` for retrieving tenant users. citeturn0search0turn0search4
+
+Install the required module if necessary:
+
+```powershell
+Install-Module Microsoft.Graph.Users -Scope CurrentUser
+```
+
+The toolkit only connects to Microsoft Graph when option 4 is selected. The other ADToolkit reports do not require Microsoft Graph.
+
+The report is written to `ADToolkit\Reports\M365AccountComparison`.
+
 ## Configuration
 
 Shared defaults are stored in `Config.ps1`.
@@ -92,16 +118,21 @@ Use the PowerShell `Invoke-*` pattern for executable toolkit commands. The filen
 Examples:
 
 ```text
-Invoke-InactiveUserReport.ps1 -> Invoke-InactiveUserReport
-Invoke-ADPrivilegeAudit.ps1   -> Invoke-ADPrivilegeAudit
-Invoke-AllUserLogonReport.ps1 -> Invoke-AllUserLogonReport
+Invoke-InactiveUserReport.ps1    -> Invoke-InactiveUserReport
+Invoke-ADPrivilegeAudit.ps1      -> Invoke-ADPrivilegeAudit
+Invoke-AllUserLogonReport.ps1    -> Invoke-AllUserLogonReport
+Invoke-M365AccountComparison.ps1 -> Invoke-M365AccountComparison
 ```
 
 Do not introduce legacy names such as `Audit-ADPrivileges.ps1` for new commands.
 
+## Date standard
+
+All report dates are date-only and use `dd MMM yyyy`, for example `14 Aug 2026`. Do not include time values unless the user explicitly requests them.
+
 ## Safety
 
-ADToolkit reports are intended to be **read-only** against Active Directory. Do not add account changes, group membership changes, password resets, deletions, or other write operations without explicitly documenting and approving the behaviour.
+ADToolkit reports are intended to be **read-only** against Active Directory and Microsoft 365. Do not add account changes, group membership changes, password resets, deletions, or other write operations without explicitly documenting and approving the behaviour.
 
 ## Testing
 
@@ -111,12 +142,12 @@ Run the current lightweight static validation with:
 .\Tests\Validate-ADToolkit.ps1
 ```
 
-This validates required files, feature naming, public command names, duplicate public functions, and PowerShell parser errors without connecting to AD.
+This validates required files, feature naming, public command names, duplicate public functions, and PowerShell parser errors without connecting to AD or Microsoft Graph.
 
 ### Planned: Pester
 
 Pester is intentionally **deferred to a later iteration**. It is the planned behavioural/unit testing framework for this project. Future LLMs should preserve this decision and should not add another test framework in its place.
 
-When introduced, Pester tests should mock AD cmdlets where practical so tests remain safe and do not depend on production Active Directory data.
+When introduced, Pester tests should mock AD and Microsoft Graph cmdlets where practical so tests remain safe and do not depend on production directory data.
 
 For contributor/LLM rules, see `DEVELOPMENT.md`.
