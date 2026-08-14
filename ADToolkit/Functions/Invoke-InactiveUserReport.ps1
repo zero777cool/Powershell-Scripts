@@ -3,41 +3,34 @@
     Reports on Active Directory user accounts that have not logged in within a specified number of months.
 
 .DESCRIPTION
-    Queries on-premises Active Directory for user accounts and flags any whose last logon is older
-    than the configured cutoff date (or who have never logged on, excluding accounts newer than the
-    cutoff). Also flags PasswordNeverExpires and membership in a configurable list of privileged AD
-    groups, so higher-risk stale accounts stand out. Outputs to console, CSV, and a styled HTML report.
+    Queries on-premises Active Directory for user accounts and flags stale accounts. It also flags
+    PasswordNeverExpires and membership in configured privileged AD groups. Output is written to the
+    console, CSV, and a styled HTML report.
 
-    By default this uses LastLogonTimestamp, which IS replicated between Domain Controllers but can lag
-    up to ~9-14 days (controlled by ms-DS-Logon-Time-Sync-Interval). For month-level reporting this is
-    fine in almost all cases. Use -Accurate if you need a precise value - it queries every DC directly
-    for the true (non-replicated) LastLogon attribute and takes the maximum, but is slower.
+    LastLogonTimestamp is used by default. Use -Accurate when an exact non-replicated LastLogon value
+    is required; that mode queries every domain controller and is slower.
 
-    Part of the Rance Timber AD Toolkit. Assumes Functions\Common.ps1 has already been dot-sourced
-    (Show-BorderedTable, $Theme, $HtmlThemeStyle, Test-ADModuleAvailable) - this happens automatically
-    when launched via ADToolkit.ps1. Can also be dot-sourced and called standalone.
+    Part of the Rance Timber AD Toolkit. Common.ps1 and Config.ps1 are loaded by ADToolkit.ps1.
+    The command can also be dot-sourced and called standalone if those shared files are loaded first.
 
 .PARAMETER IncludeDisabled
-    Include disabled accounts in the results. By default, disabled accounts are excluded.
+    Include disabled accounts. Disabled accounts are excluded by default.
 
 .PARAMETER SearchBase
-    Optional Distinguished Name of an OU to limit the search to.
+    Optional Distinguished Name of an OU to limit the search.
 
 .PARAMETER Accurate
-    Queries every reachable Domain Controller for the true LastLogon value instead of relying on the
-    replicated LastLogonTimestamp attribute.
+    Query every reachable Domain Controller for the true LastLogon value.
 
 .PARAMETER OutputCsvPath
-    Path to export results as CSV. If omitted, a file is created in the current directory using the
-    ADToolkit-InactiveUsers_yyyyMMdd.csv naming convention.
+    Optional CSV output path. Defaults to ADToolkit-InactiveUsers_yyyyMMdd.csv in the current directory.
 
 .PARAMETER OutputHtmlPath
-    Path to export results as a styled HTML report. If omitted, a file is created in the current
-    directory using the ADToolkit-InactiveUsers_yyyyMMdd.html naming convention.
+    Optional HTML output path. Defaults to ADToolkit-InactiveUsers_yyyyMMdd.html in the current directory.
 
 .NOTES
-    Author       : Jeremy
-    Part of      : Rance Timber AD Toolkit
+    Author  : Jeremy
+    Part of : Rance Timber AD Toolkit
 #>
 
 function Invoke-InactiveUserReport {
@@ -50,12 +43,10 @@ function Invoke-InactiveUserReport {
         [string]$OutputHtmlPath
     )
 
-    $MonthsInactive = 6
-    $PrivilegedGroupNames = @(
-        'Domain Admins','Enterprise Admins','Schema Admins','Administrators',
-        'Account Operators','Backup Operators','Server Operators','Print Operators',
-        'Group Policy Creator Owners'
-    )
+    $Config = $ADToolkitConfig.InactiveUserReport
+    $MonthsInactive = $Config.MonthsInactive
+    $PrivilegedGroupNames = $Config.PrivilegedGroupNames
+    $OutputFilePrefix = $Config.OutputFilePrefix
 
     function Get-AccurateLastLogon {
         param($SamAccountName)
@@ -184,12 +175,12 @@ $HtmlRows
     Write-Host ''
     Show-BorderedTable -InputObject $Results -Columns @('SamAccountName','Name','Enabled','Days Since Last Logon','Last Logon Date','Account Created','Password Never Expires','Privileged Groups') -CenterColumns @('Days Since Last Logon')
 
-    if (-not $OutputCsvPath) { $OutputCsvPath = ".\ADToolkit-InactiveUsers_$(Get-Date -Format 'yyyyMMdd').csv" }
+    if (-not $OutputCsvPath) { $OutputCsvPath = ".\${OutputFilePrefix}_$(Get-Date -Format 'yyyyMMdd').csv" }
     $Results | Export-Csv -Path $OutputCsvPath -NoTypeInformation -Encoding UTF8
     Write-Host ''
     Write-Host "Results exported to: $OutputCsvPath" -ForegroundColor $Theme.Success
 
-    if (-not $OutputHtmlPath) { $OutputHtmlPath = ".\ADToolkit-InactiveUsers_$(Get-Date -Format 'yyyyMMdd').html" }
+    if (-not $OutputHtmlPath) { $OutputHtmlPath = ".\${OutputFilePrefix}_$(Get-Date -Format 'yyyyMMdd').html" }
     $HtmlReport = ConvertTo-InactiveUserHtmlReport -Results $Results -RunDate $RunDate -CutoffDate $CutoffDate -MonthsInactive $MonthsInactive
     $HtmlReport | Out-File -FilePath $OutputHtmlPath -Encoding UTF8
     Write-Host "HTML report exported to: $OutputHtmlPath" -ForegroundColor $Theme.Success
