@@ -23,10 +23,10 @@
     Query every reachable Domain Controller for the true LastLogon value.
 
 .PARAMETER OutputCsvPath
-    Optional CSV output path. Defaults to ADToolkit-InactiveUsers_yyyyMMdd.csv in the current directory.
+    Optional CSV output path. By default the report is written beneath ADToolkit\Reports.
 
 .PARAMETER OutputHtmlPath
-    Optional HTML output path. Defaults to ADToolkit-InactiveUsers_yyyyMMdd.html in the current directory.
+    Optional HTML output path. By default the report is written beneath ADToolkit\Reports.
 
 .NOTES
     Author  : Jeremy
@@ -47,6 +47,11 @@ function Invoke-InactiveUserReport {
     $MonthsInactive = $Config.MonthsInactive
     $PrivilegedGroupNames = $Config.PrivilegedGroupNames
     $OutputFilePrefix = $Config.OutputFilePrefix
+    $OutputDirectory = Join-Path -Path $ADToolkitConfig.ReportsDirectory -ChildPath $Config.OutputDirectoryName
+
+    if (-not (Test-Path -LiteralPath $OutputDirectory)) {
+        $null = New-Item -Path $OutputDirectory -ItemType Directory -Force
+    }
 
     function Get-AccurateLastLogon {
         param($SamAccountName)
@@ -175,12 +180,12 @@ $HtmlRows
     Write-Host ''
     Show-BorderedTable -InputObject $Results -Columns @('SamAccountName','Name','Enabled','Days Since Last Logon','Last Logon Date','Account Created','Password Never Expires','Privileged Groups') -CenterColumns @('Days Since Last Logon')
 
-    if (-not $OutputCsvPath) { $OutputCsvPath = ".\${OutputFilePrefix}_$(Get-Date -Format 'yyyyMMdd').csv" }
+    if (-not $OutputCsvPath) { $OutputCsvPath = Join-Path -Path $OutputDirectory -ChildPath "${OutputFilePrefix}_$(Get-Date -Format 'yyyyMMdd').csv" }
     $Results | Export-Csv -Path $OutputCsvPath -NoTypeInformation -Encoding UTF8
     Write-Host ''
     Write-Host "Results exported to: $OutputCsvPath" -ForegroundColor $Theme.Success
 
-    if (-not $OutputHtmlPath) { $OutputHtmlPath = ".\${OutputFilePrefix}_$(Get-Date -Format 'yyyyMMdd').html" }
+    if (-not $OutputHtmlPath) { $OutputHtmlPath = Join-Path -Path $OutputDirectory -ChildPath "${OutputFilePrefix}_$(Get-Date -Format 'yyyyMMdd').html" }
     $HtmlReport = ConvertTo-InactiveUserHtmlReport -Results $Results -RunDate $RunDate -CutoffDate $CutoffDate -MonthsInactive $MonthsInactive
     $HtmlReport | Out-File -FilePath $OutputHtmlPath -Encoding UTF8
     Write-Host "HTML report exported to: $OutputHtmlPath" -ForegroundColor $Theme.Success
