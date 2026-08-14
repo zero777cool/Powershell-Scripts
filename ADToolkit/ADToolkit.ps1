@@ -6,9 +6,6 @@
     Loads shared configuration/helpers and feature commands, then presents a menu for running
     read-only Active Directory reports. Each feature lives in its own Functions\Invoke-*.ps1 file.
 
-    Menu selections use immediate single-key input. Pressing 1, 2, or 3 runs the corresponding
-    report immediately; Q quits. No Enter key is required.
-
     All generated reports and audit logs are rooted beneath ADToolkit\Reports, independent of the
     directory from which this launcher is started.
 
@@ -86,7 +83,7 @@ $MenuItems = @(
     [PSCustomObject]@{
         Key         = '3'
         Title       = 'All User Logon Report'
-        Description = 'List every domain user with enabled status and date-only LastLogon'
+        Description = 'List every domain user with enabled status and exact LastLogon time'
         Action      = { Invoke-AllUserLogonReport }
     }
 )
@@ -107,22 +104,9 @@ function Show-MainMenu {
     Write-Host ''
 }
 
-function Read-MenuChoice {
-    [CmdletBinding()]
-    param()
-
-    # Console.ReadKey($true) waits for exactly one key and does not require Enter.
-    # Microsoft documents ReadKey(Boolean) as returning immediately when a console key is pressed.
-    $KeyInfo = [System.Console]::ReadKey($true)
-    return $KeyInfo.KeyChar.ToString()
-}
-
 do {
     Show-MainMenu
-    Write-Host '   Select an option: ' -ForegroundColor $Theme.Text -NoNewline
-    $Choice = Read-MenuChoice
-    Write-Host $Choice -ForegroundColor $Theme.Accent
-
+    $Choice = Read-Host 'Select an option'
     if ($Choice -match '^[Qq]$') { break }
 
     $Selected = $MenuItems | Where-Object { $_.Key -eq $Choice }
