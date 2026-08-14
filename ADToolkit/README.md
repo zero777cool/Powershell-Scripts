@@ -8,7 +8,6 @@ A menu-driven launcher for Active Directory reporting scripts. Run `ADToolkit.ps
 ADToolkit/
 ├── ADToolkit.ps1                        <- launcher/menu
 ├── Config.ps1                           <- shared/default configuration
-├── Common/                              <- not used; shared helpers remain in Functions
 ├── Functions/
 │   ├── Common.ps1                       <- shared theme, HTML CSS, and helper functions
 │   ├── Invoke-InactiveUserReport.ps1    <- inactive account report
@@ -18,8 +17,6 @@ ADToolkit/
 ├── DEVELOPMENT.md                       <- architecture and LLM development rules
 └── README.md
 ```
-
-> Note: `Functions\Common.ps1` is intentionally kept with the feature scripts because the launcher loads the whole `Functions` directory as toolkit command dependencies.
 
 ## Running it
 
@@ -47,9 +44,7 @@ The audit requires PowerShell 5.1+, the ActiveDirectory/RSAT module, and remote 
 
 Shared defaults are stored in `Config.ps1`.
 
-Keep recurring values such as inactivity thresholds, privileged group lists, default throttling, and output naming in configuration rather than duplicating them inside multiple reports.
-
-Feature parameters should still provide sensible runtime overrides where appropriate.
+Keep recurring values that are actually shared between reports in configuration rather than duplicating them. Feature parameters should still provide sensible runtime overrides where appropriate.
 
 ## Adding a new command
 
@@ -57,7 +52,7 @@ Feature parameters should still provide sensible runtime overrides where appropr
 2. Expose exactly one public function named `Invoke-YourReport`.
 3. Keep feature-specific helper functions nested inside the public function unless they are genuinely shared.
 4. Reuse `Common.ps1` helpers and `$Theme` rather than creating duplicate UI/formatting code.
-5. Put shared/default settings in `Config.ps1`.
+5. Put shared/default settings in `Config.ps1` when the setting is genuinely shared.
 6. Add the feature path to `$RequiredToolkitFiles` in `ADToolkit.ps1`.
 7. Add a `Key`, `Title`, `Description`, and `Action` to `$MenuItems`.
 8. Update this README when the new command changes the toolkit's user-facing functionality.
