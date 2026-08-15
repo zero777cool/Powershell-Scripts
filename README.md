@@ -10,4 +10,4 @@ See [`ADToolkit/README.md`](ADToolkit/README.md) for usage and [`ADToolkit/DEVEL
 
 ### Development status
 
-The ADToolkit uses lightweight static validation today. **Pester is deliberately planned for a later iteration** for behavioural/unit testing. Future contributors and coding LLMs should preserve that direction and should not introduce a competing test framework.
+The ADToolkit uses lightweight static validation today. **Pester is deliberately planned for a later iteration** for behavioural/unit testing. Future contributors and coding LLMs should preserve that direction and should not introduce a competing test framework!
