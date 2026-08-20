@@ -49,6 +49,11 @@ $ADToolkitConfig = [ordered]@{
         OutputFilePrefix    = 'ADToolkit-AllUserLogons'
     }
 
+    UserLogonLocationReport = [ordered]@{
+        OutputDirectoryName = 'UserLogonLocationReport'
+        OutputFilePrefix    = 'ADToolkit-UserLogonLocation'
+    }
+
     M365AccountComparison = [ordered]@{
         OutputDirectoryName = 'M365AccountComparison'
         OutputFilePrefix    = 'ADToolkit-M365AccountComparison'

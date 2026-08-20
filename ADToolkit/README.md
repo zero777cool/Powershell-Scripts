@@ -13,6 +13,7 @@ ADToolkit/
 │   ├── Invoke-InactiveUserReport.ps1    <- inactive account report
 │   ├── Invoke-ADPrivilegeAudit.ps1      <- privileged access audit
 │   ├── Invoke-AllUserLogonReport.ps1    <- all users and exact LastLogon report
+│   ├── Invoke-UserLogonLocationReport.ps1 <- finds a user's current computer sessions
 │   └── Invoke-M365AccountComparison.ps1 <- AD to Microsoft 365 account comparison
 ├── Reports/                             <- generated reports/logs; never committed
 ├── Tests/
@@ -37,6 +38,7 @@ ADToolkit\Reports\
 ├── ADPrivilegeAudit\
 │   └── Logs\
 ├── AllUserLogonReport\
+├── UserLogonLocationReport\
 └── M365AccountComparison\
 ```
 
@@ -93,6 +95,21 @@ The toolkit only connects to Microsoft Graph when option 4 is selected. The othe
 
 The report is written to `ADToolkit\Reports\M365AccountComparison`.
 
+### 6. Find User Logon Location
+
+Runs `Invoke-UserLogonLocationReport` and prompts for an AD network username (`SamAccountName`). It checks enabled AD computer objects and reports computers where the user currently has an interactive console session or a Remote Desktop (RDP) session.
+
+The report uses `Win32_LogonSession` together with `Win32_LoggedOnUser` associations, rather than relying only on the single desktop user exposed by `Win32_ComputerSystem.UserName`. Offline or unreachable computers are reported as unavailable and do not stop the scan.
+
+The read-only CSV uses HR-friendly headings while retaining the AD username:
+
+- `Full Name`
+- `AD Network Username`
+- `Computer Name`
+- `Session Type`
+
+The CSV is written to `ADToolkit\Reports\UserLogonLocationReport` regardless of where the toolkit is launched from. It has no user-facing time fields.
+
 ## Configuration
 
 Shared defaults are stored in `Config.ps1`.
@@ -121,6 +138,7 @@ Examples:
 Invoke-InactiveUserReport.ps1    -> Invoke-InactiveUserReport
 Invoke-ADPrivilegeAudit.ps1      -> Invoke-ADPrivilegeAudit
 Invoke-AllUserLogonReport.ps1    -> Invoke-AllUserLogonReport
+Invoke-UserLogonLocationReport.ps1 -> Invoke-UserLogonLocationReport
 Invoke-M365AccountComparison.ps1 -> Invoke-M365AccountComparison
 ```
 

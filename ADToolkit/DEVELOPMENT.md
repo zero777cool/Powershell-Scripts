@@ -15,6 +15,7 @@ ADToolkit/
 │   ├── Invoke-InactiveUserReport.ps1
 │   ├── Invoke-ADPrivilegeAudit.ps1
 │   ├── Invoke-AllUserLogonReport.ps1
+│   ├── Invoke-UserLogonLocationReport.ps1
 │   └── Invoke-M365AccountComparison.ps1
 └── Tests/
     └── Validate-ADToolkit.ps1
@@ -38,6 +39,7 @@ Examples:
 - `Invoke-InactiveUserReport.ps1` -> `Invoke-InactiveUserReport`
 - `Invoke-ADPrivilegeAudit.ps1` -> `Invoke-ADPrivilegeAudit`
 - `Invoke-AllUserLogonReport.ps1` -> `Invoke-AllUserLogonReport`
+- `Invoke-UserLogonLocationReport.ps1` -> `Invoke-UserLogonLocationReport`
 - `Invoke-M365AccountComparison.ps1` -> `Invoke-M365AccountComparison`
 
 Avoid legacy or inconsistent names such as `Audit-ADPrivileges.ps1` for new toolkit features.
@@ -92,6 +94,10 @@ AD reporting commands should default to read-only operations. Do not add account
 The feature is read-only and uses interactive delegated Microsoft Graph authentication with `User.Read.All`. It should connect to Graph only when option 4 is selected; the other reports must remain independent of Microsoft Graph. citeturn0search0turn0search7
 
 Do not add Microsoft Graph write permissions to this feature. If future Microsoft 365 functionality requires writes, treat that as a separate, explicitly approved design change.
+
+### Find User Logon Location
+
+`Invoke-UserLogonLocationReport` prompts for an AD `SamAccountName`, queries enabled AD computer objects, and finds matching interactive (`LogonType 2`) and Remote Interactive/RDP (`LogonType 10`) sessions. It uses `Win32_LogonSession` and `Win32_LoggedOnUser` CIM associations so multiple relevant sessions can be identified. Unreachable computers must not abort the scan. Output is written beneath `ADToolkit\Reports\UserLogonLocationReport` and contains no user-facing time values.
 
 ## Planned development environment
 
