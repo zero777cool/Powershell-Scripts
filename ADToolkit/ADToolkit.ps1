@@ -28,6 +28,7 @@ $RequiredToolkitFiles = @(
     'Functions\Invoke-InactiveUserReport.ps1'
     'Functions\Invoke-ADPrivilegeAudit.ps1'
     'Functions\Invoke-AllUserLogonReport.ps1'
+    'Functions\Invoke-UserLogonLocationReport.ps1'
     'Functions\Invoke-M365AccountComparison.ps1'
 )
 
@@ -92,6 +93,12 @@ $MenuItems = @(
         Title       = 'Microsoft 365 Account Comparison'
         Description = 'Compare AD SamAccountName values with Microsoft 365 / Entra ID synchronized accounts'
         Action      = { Invoke-M365AccountComparison }
+    }
+    [PSCustomObject]@{
+        Key         = '6'
+        Title       = 'Find User Logon Location'
+        Description = 'Find computers where a user has an interactive or Remote Desktop session'
+        Action      = { Invoke-UserLogonLocationReport }
     }
 )
 
