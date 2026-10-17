@@ -28,7 +28,9 @@ $RequiredToolkitFiles = @(
     'Functions\Invoke-InactiveUserReport.ps1'
     'Functions\Invoke-ADPrivilegeAudit.ps1'
     'Functions\Invoke-AllUserLogonReport.ps1'
+    'Functions\Invoke-ActiveUserReport.ps1'
     'Functions\Invoke-UserLogonLocationReport.ps1'
+    'Functions\Invoke-CsvToHtmlRebuild.ps1'
     'Functions\Invoke-M365AccountComparison.ps1'
 )
 
@@ -95,10 +97,22 @@ $MenuItems = @(
         Action      = { Invoke-M365AccountComparison }
     }
     [PSCustomObject]@{
+        Key         = '5'
+        Title       = 'Active Domain Users (HR Payroll List)'
+        Description = 'List every enabled domain user with name, username and email (CSV and HTML)'
+        Action      = { Invoke-ActiveUserReport }
+    }
+    [PSCustomObject]@{
         Key         = '6'
         Title       = 'Find User Logon Location'
         Description = 'Find computers where a user has an interactive or Remote Desktop session'
         Action      = { Invoke-UserLogonLocationReport }
+    }
+    [PSCustomObject]@{
+        Key         = 'R'
+        Title       = 'Rebuild HTML from an Edited CSV'
+        Description = 'After removing rows from a saved CSV report, regenerate its HTML to match'
+        Action      = { Invoke-CsvToHtmlRebuild }
     }
 )
 
@@ -106,6 +120,8 @@ function Show-MainMenu {
     Clear-Host
     Write-Host ''
     Show-Banner -Text 'RANCE TIMBER - AD TOOLKIT' -Color $Theme.Title
+    Write-Host ''
+    Write-Host '   NOTE: Working from home or outside the company network? Connect to the VPN first.' -ForegroundColor $Theme.Warn
     Write-Host ''
     foreach ($Item in $MenuItems) {
         Write-Host ("   [{0}] " -f $Item.Key) -ForegroundColor $Theme.Accent -NoNewline

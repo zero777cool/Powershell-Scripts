@@ -128,3 +128,118 @@ function Wait-KeyPress {
         Read-Host | Out-Null
     }
 }
+
+# ===== CSV -> HTML REPORT HELPERS =====
+# Every toolkit report writes a CSV first and then builds its HTML *from that CSV*, so the two
+# files always match. The same helper powers the menu's "Rebuild HTML from an edited CSV" option:
+# remove rows from a CSV, rebuild, and the HTML reflects the edited CSV.
+
+# Works out whether a CSV uses commas or semicolons. Excel on some regional settings saves
+# semicolon-delimited files, so the delimiter is detected from the header line.
+function Get-ToolkitCsvDelimiter {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    $FirstLine = Get-Content -LiteralPath $Path -TotalCount 1 -ErrorAction Stop
+    if ([string]::IsNullOrEmpty($FirstLine)) { return ',' }
+
+    $Commas     = @($FirstLine.ToCharArray() | Where-Object { $_ -eq ',' }).Count
+    $Semicolons = @($FirstLine.ToCharArray() | Where-Object { $_ -eq ';' }).Count
+    if ($Semicolons -gt $Commas) { return ';' }
+    return ','
+}
+
+# Builds a readable report title from a CSV path using the titles in Config.ps1, falling back to
+# a title derived from the file name.
+function Get-ToolkitReportTitle {
+    param([Parameter(Mandatory = $true)][string]$CsvPath)
+
+    $FullPath = [System.IO.Path]::GetFullPath($CsvPath)
+    $Stem = [System.IO.Path]::GetFileNameWithoutExtension($FullPath) -replace '_\d{8}(_\d{6})?$', ''
+
+    if ($ADToolkitConfig.ReportTitles.Contains($Stem)) { return [string]$ADToolkitConfig.ReportTitles[$Stem] }
+
+    $Readable = ($Stem -replace '^ADToolkit-', '') -replace '_', ' '
+    $Readable = [regex]::Replace($Readable, '(?<=[a-z])(?=[A-Z])', ' ')
+
+    $FolderName = Split-Path -Leaf ([System.IO.Path]::GetDirectoryName($FullPath))
+    if ($FolderName -eq $ADToolkitConfig.ADPrivilegeAudit.OutputDirectoryName) { return "AD Privilege Audit - $Readable" }
+    return $Readable
+}
+
+# Reads a CSV and writes an HTML report (same look as the other toolkit HTML reports) containing
+# exactly the rows that are in the CSV. Returns the HTML path. Throws if the files can't be read
+# or written, so callers decide how to report the failure.
+function Export-ToolkitHtmlReport {
+    param(
+        [Parameter(Mandatory = $true)][string]$CsvPath,
+        [string]$HtmlPath,
+        [string]$Title
+    )
+
+    if (-not (Test-Path -LiteralPath $CsvPath -PathType Leaf)) { throw "CSV file not found: $CsvPath" }
+    if (-not $HtmlPath) { $HtmlPath = [System.IO.Path]::ChangeExtension($CsvPath, '.html') }
+    if (-not $Title) { $Title = Get-ToolkitReportTitle -CsvPath $CsvPath }
+
+    $Delimiter = Get-ToolkitCsvDelimiter -Path $CsvPath
+    $Rows = @(Import-Csv -LiteralPath $CsvPath -Delimiter $Delimiter)
+    $Columns = @()
+    if ($Rows.Count -gt 0) { $Columns = @($Rows[0].PSObject.Properties.Name) }
+
+    $Encode = { param($Value) [System.Net.WebUtility]::HtmlEncode([string]$Value) }
+
+    # Highlighting that mirrors the Inactive User Report: privileged-group members and accounts
+    # whose password never expires. Only applied when those columns are present in the CSV.
+    $HasPrivileged = $Columns -contains 'Privileged Groups'
+    $HasNeverExpires = $Columns -contains 'Password Never Expires'
+    $Highlighted = $HasPrivileged -or $HasNeverExpires
+
+    $HeaderCells = ($Columns | ForEach-Object { '<th>' + (& $Encode $_) + '</th>' }) -join ''
+
+    $BodyRows = foreach ($Row in $Rows) {
+        $RowClass = ''
+        if ($HasPrivileged -and $Row.'Privileged Groups') { $RowClass = 'privileged' }
+        elseif ($HasNeverExpires -and $Row.'Password Never Expires' -eq 'True') { $RowClass = 'never-expires' }
+        $Cells = ($Columns | ForEach-Object { '<td>' + (& $Encode $Row.$_) + '</td>' }) -join ''
+        "    <tr class=""$RowClass"">$Cells</tr>"
+    }
+
+    if ($Rows.Count -gt 0) {
+        $TableHtml = "<table>`n<tr>$HeaderCells</tr>`n$($BodyRows -join "`n")`n</table>"
+    }
+    else {
+        $TableHtml = '<p>No records.</p>'
+    }
+
+    $LegendHtml = ''
+    if ($Highlighted) {
+        $LegendHtml = '<div class="legend"><span class="item"><span class="swatch" style="background:#3a1414;"></span>Member of a privileged group</span><span class="item"><span class="swatch" style="background:#332b00;"></span>Password never expires</span></div>'
+    }
+
+    $ReportDate = (Get-Date).ToString($ADToolkitConfig.ReportDateFormat)
+    $SourceName = [System.IO.Path]::GetFileName($CsvPath)
+    $SafeTitle = & $Encode $Title
+
+    $Html = @"
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<title>$SafeTitle</title>
+<style>$HtmlThemeStyle
+    @media print { body { background-color: #FFFFFF; color: #000000; } h1 { color: #000000; border-bottom-color: #000000; } th { background-color: #EEEEEE; color: #000000; } th, td { border-color: #999999; } .found { color: #000000; } }
+</style></head>
+<body>
+<h1>$SafeTitle</h1>
+<div class="meta">
+<p><span class="label">Report date</span>: $ReportDate</p>
+<p><span class="label">Source file</span>: $(& $Encode $SourceName)</p>
+</div>
+<p class="found">$($Rows.Count) record(s):</p>
+$TableHtml
+$LegendHtml
+</body></html>
+"@
+
+    $Directory = [System.IO.Path]::GetDirectoryName([System.IO.Path]::GetFullPath($HtmlPath))
+    if (-not (Test-Path -LiteralPath $Directory)) { $null = New-Item -Path $Directory -ItemType Directory -Force }
+    $Html | Out-File -LiteralPath $HtmlPath -Encoding UTF8 -ErrorAction Stop
+    return $HtmlPath
+}

@@ -13,7 +13,9 @@ ADToolkit/
 │   ├── Invoke-InactiveUserReport.ps1    <- inactive account report
 │   ├── Invoke-ADPrivilegeAudit.ps1      <- privileged access audit
 │   ├── Invoke-AllUserLogonReport.ps1    <- all users and exact LastLogon report
+│   ├── Invoke-ActiveUserReport.ps1      <- enabled users list for HR payroll reconciliation
 │   ├── Invoke-UserLogonLocationReport.ps1 <- finds a user's current computer sessions
+│   ├── Invoke-CsvToHtmlRebuild.ps1      <- rebuilds a report's HTML from an edited CSV
 │   └── Invoke-M365AccountComparison.ps1 <- AD to Microsoft 365 account comparison
 ├── Reports/                             <- generated reports/logs; never committed
 ├── Tests/
@@ -30,6 +32,8 @@ ADToolkit/
 
 Requires the ActiveDirectory PowerShell module (RSAT-AD-PowerShell). The toolkit checks for it on startup and tells you if it is missing.
 
+**Working from home?** Connect to the company VPN first. The reports need to reach a domain controller; without the VPN you will see "Unable to find a default server with Active Directory Web Services running." The launcher menu shows a reminder.
+
 **Run location does not affect report output.** All generated reports and audit logs are written beneath `ADToolkit\Reports` using paths based on the toolkit's own directory, not the current working directory.
 
 ```text
@@ -37,6 +41,7 @@ ADToolkit\Reports\
 ├── InactiveUserReport\
 ├── ADPrivilegeAudit\
 │   └── Logs\
+├── ActiveUserReport\
 ├── AllUserLogonReport\
 ├── UserLogonLocationReport\
 └── M365AccountComparison\
@@ -95,6 +100,21 @@ The toolkit only connects to Microsoft Graph when option 4 is selected. The othe
 
 The report is written to `ADToolkit\Reports\M365AccountComparison`.
 
+### 5. Active Domain Users (HR Payroll List)
+
+Runs `Invoke-ActiveUserReport` and lists every **enabled** domain user so HR can reconcile the directory against payroll. Disabled accounts are excluded. The report is read-only and is written as both a CSV and an HTML file with the same base name.
+
+Columns use HR-friendly headings:
+
+- `Full Name`
+- `AD Network Username`
+- `Email`
+- `Account Created`
+
+`Email` is blank where it is not populated in Active Directory. Output files are named `ADToolkit-ActiveUsers_yyyyMMdd.csv` and `.html` and are written to `ADToolkit\Reports\ActiveUserReport`. The optional `-SearchBase`, `-OutputCsvPath` and `-OutputHtmlPath` parameters override the scope and file locations when the command is called directly. The HTML switches to a plain black-on-white layout when printed.
+
+Note that the report lists every enabled user object, which can include service, shared or generic accounts. Remove those from the file before sending it to HR if they should not be compared against payroll.
+
 ### 6. Find User Logon Location
 
 Runs `Invoke-UserLogonLocationReport` and prompts for an AD network username (`SamAccountName`). It checks enabled AD computer objects and reports computers where the user currently has an interactive console session or a Remote Desktop (RDP) session.
@@ -109,6 +129,22 @@ The read-only CSV uses HR-friendly headings while retaining the AD username:
 - `Session Type`
 
 The CSV is written to `ADToolkit\Reports\UserLogonLocationReport` regardless of where the toolkit is launched from. It has no user-facing time fields.
+
+### R. Rebuild HTML from an Edited CSV
+
+Every report writes a CSV and builds its HTML **from that CSV**, so the two always match. To change what is in the HTML, edit the CSV and rebuild:
+
+1. Open the CSV from `ADToolkit\Reports\<report folder>`, delete the rows you do not want, and save it as CSV (keep the CSV format; comma- or semicolon-delimited both work).
+2. Choose `R` in the menu and pick the CSV from the list of recent reports.
+3. The HTML is rewritten next to the CSV with exactly the rows that are left. The CSV is never modified.
+
+The HTML cannot update itself live from the CSV: browsers block a web page opened from a local file from reading other local files. The HTML is a self-contained snapshot, so it can be emailed on its own.
+
+The Inactive User Report builds its own HTML when it runs. Rebuilding it from a CSV keeps the same privileged and password-never-expires highlighting.
+
+## Output formats
+
+Every report (options 1 to 6) writes a CSV and an HTML file with the same base name in the same folder. The AD Privilege Audit writes an HTML file next to each of its CSV files.
 
 ## Configuration
 
@@ -138,6 +174,7 @@ Examples:
 Invoke-InactiveUserReport.ps1    -> Invoke-InactiveUserReport
 Invoke-ADPrivilegeAudit.ps1      -> Invoke-ADPrivilegeAudit
 Invoke-AllUserLogonReport.ps1    -> Invoke-AllUserLogonReport
+Invoke-ActiveUserReport.ps1      -> Invoke-ActiveUserReport
 Invoke-UserLogonLocationReport.ps1 -> Invoke-UserLogonLocationReport
 Invoke-M365AccountComparison.ps1 -> Invoke-M365AccountComparison
 ```

@@ -15,7 +15,9 @@ ADToolkit/
 │   ├── Invoke-InactiveUserReport.ps1
 │   ├── Invoke-ADPrivilegeAudit.ps1
 │   ├── Invoke-AllUserLogonReport.ps1
+│   ├── Invoke-ActiveUserReport.ps1
 │   ├── Invoke-UserLogonLocationReport.ps1
+│   ├── Invoke-CsvToHtmlRebuild.ps1
 │   └── Invoke-M365AccountComparison.ps1
 └── Tests/
     └── Validate-ADToolkit.ps1
@@ -39,6 +41,7 @@ Examples:
 - `Invoke-InactiveUserReport.ps1` -> `Invoke-InactiveUserReport`
 - `Invoke-ADPrivilegeAudit.ps1` -> `Invoke-ADPrivilegeAudit`
 - `Invoke-AllUserLogonReport.ps1` -> `Invoke-AllUserLogonReport`
+- `Invoke-ActiveUserReport.ps1` -> `Invoke-ActiveUserReport`
 - `Invoke-UserLogonLocationReport.ps1` -> `Invoke-UserLogonLocationReport`
 - `Invoke-M365AccountComparison.ps1` -> `Invoke-M365AccountComparison`
 
@@ -73,11 +76,23 @@ Reports should clearly identify where output was written and should use an `ADTo
 
 All generated reports and logs must be written beneath `ADToolkit\Reports`, using paths derived from `$PSScriptRoot`/the toolkit root. Never use the current working directory as the default report location.
 
+## Output formats (CSV and HTML)
+
+Every report must produce both a CSV and an HTML file. Write the CSV first, then build the HTML **from that CSV** with `Export-ToolkitHtmlReport -CsvPath <csv>` (in `Functions/Common.ps1`) so the two files cannot drift apart. HTML failure must not hide a successful CSV: catch it and warn. Add the report's `OutputFilePrefix` and title to `ReportTitles` in `Config.ps1`.
+
+`Invoke-CsvToHtmlRebuild` (menu option `R`) uses the same helper to regenerate an HTML file after a user removes rows from a CSV. The HTML cannot read the CSV live because browsers block local `file://` pages from reading other local files; do not try to add that.
+
+The Inactive User Report keeps its own HTML generator; the shared helper reproduces its row highlighting for rebuilds.
+
 ## Safety
 
 AD reporting commands should default to read-only operations. Do not add account modification, group membership changes, password resets, deletion, or other write operations without explicitly documenting the behaviour and getting approval for the change.
 
 ## Current reports
+
+### Active Domain Users (HR Payroll List)
+
+`Invoke-ActiveUserReport` lists every enabled AD user for HR payroll reconciliation and writes both CSV and HTML beneath `ADToolkit\Reports\ActiveUserReport`. Headings are HR-friendly (`Full Name`, `AD Network Username`, `Email`, `Account Created`) and the only date field, `Account Created`, follows the `dd MMM yyyy` date-only rule. HTML values are HTML-encoded. It is read-only.
 
 ### All User Logon Report
 
@@ -144,4 +159,5 @@ When another LLM modifies this project:
 10. Run `Tests\Validate-ADToolkit.ps1` before declaring the change complete.
 11. Keep Pester in mind as the planned future behavioural test framework.
 12. Keep the planned Windows local test environment in mind for a later iteration.
-13. Update documentation when adding or changing a feature.
+13. Every report writes CSV plus HTML built from that CSV via `Export-ToolkitHtmlReport`.
+14. Update documentation when adding or changing a feature.

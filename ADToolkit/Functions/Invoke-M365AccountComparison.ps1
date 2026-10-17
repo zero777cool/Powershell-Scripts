@@ -125,5 +125,12 @@ function Invoke-M365AccountComparison {
 
     $Results | Export-Csv -Path $OutputCsvPath -NoTypeInformation -Encoding UTF8
     Write-Host ''
-    Write-Host "Results exported to: $OutputCsvPath" -ForegroundColor $Theme.Success
+    Write-Host "CSV report exported to : $OutputCsvPath" -ForegroundColor $Theme.Success
+    try {
+        $HtmlPath = Export-ToolkitHtmlReport -CsvPath $OutputCsvPath
+        Write-Host "HTML report exported to: $HtmlPath" -ForegroundColor $Theme.Success
+    }
+    catch {
+        Write-Host "Could not create the HTML report: $_" -ForegroundColor $Theme.Warn
+    }
 }
