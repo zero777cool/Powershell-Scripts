@@ -336,6 +336,8 @@ function Export-CsvReport {
     param([Parameter(Mandatory)][string]$Name,[AllowNull()][object[]]$Data)
     $path = Join-Path $script:AuditDirectory "$Name`_$($script:RunStamp).csv"
     @($Data) | Export-Csv -LiteralPath $path -NoTypeInformation -Encoding UTF8
+    try { $null = Export-ToolkitHtmlReport -CsvPath $path }
+    catch { Write-AuditLog -Level Warning -Message "Could not create the HTML report for $Name`: $($_.Exception.Message)" }
     return $path
 }
 

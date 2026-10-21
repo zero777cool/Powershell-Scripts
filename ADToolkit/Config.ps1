@@ -20,6 +20,15 @@ $ADToolkitConfig = [ordered]@{
     ReportsDirectory = $ADToolkitReportsRoot
     ReportDateFormat = 'dd MMM yyyy'
 
+    # Titles used for HTML reports, keyed by each report's OutputFilePrefix.
+    ReportTitles = [ordered]@{
+        'ADToolkit-InactiveUsers'        = 'Inactive User Report'
+        'ADToolkit-ActiveUsers'          = 'Active Domain Users'
+        'ADToolkit-AllUserLogons'        = 'All User Logon Report'
+        'ADToolkit-UserLogonLocation'    = 'Find User Logon Location'
+        'ADToolkit-M365AccountComparison' = 'Microsoft 365 Account Comparison'
+    }
+
     InactiveUserReport = [ordered]@{
         MonthsInactive       = 6
         PrivilegedGroupNames = @(
@@ -42,6 +51,11 @@ $ADToolkitConfig = [ordered]@{
         OutputDirectoryName  = 'ADPrivilegeAudit'
         OutputFilePrefix     = 'ADToolkit-PrivilegeAudit'
         LogDirectoryName     = 'Logs'
+    }
+
+    ActiveUserReport = [ordered]@{
+        OutputDirectoryName = 'ActiveUserReport'
+        OutputFilePrefix    = 'ADToolkit-ActiveUsers'
     }
 
     AllUserLogonReport = [ordered]@{

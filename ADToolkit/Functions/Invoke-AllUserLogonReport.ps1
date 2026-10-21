@@ -99,5 +99,12 @@ function Invoke-AllUserLogonReport {
     Write-Host '--------------' -ForegroundColor $Theme.Warn
     Show-BorderedTable -InputObject @($Results | Where-Object { -not $_.Enabled }) -Columns @('SamAccountName','Enabled','LastLogon')
     Write-Host ''
-    Write-Host "Report exported to: $OutputPath" -ForegroundColor $Theme.Success
+    Write-Host "CSV report exported to : $OutputPath" -ForegroundColor $Theme.Success
+    try {
+        $HtmlPath = Export-ToolkitHtmlReport -CsvPath $OutputPath
+        Write-Host "HTML report exported to: $HtmlPath" -ForegroundColor $Theme.Success
+    }
+    catch {
+        Write-Host "Could not create the HTML report: $_" -ForegroundColor $Theme.Warn
+    }
 }

@@ -127,5 +127,12 @@ function Invoke-UserLogonLocationReport {
     }
 
     Write-Host ''
-    Write-Host "Report exported to: $OutputCsvPath" -ForegroundColor $Theme.Success
+    Write-Host "CSV report exported to : $OutputCsvPath" -ForegroundColor $Theme.Success
+    try {
+        $HtmlPath = Export-ToolkitHtmlReport -CsvPath $OutputCsvPath
+        Write-Host "HTML report exported to: $HtmlPath" -ForegroundColor $Theme.Success
+    }
+    catch {
+        Write-Host "Could not create the HTML report: $_" -ForegroundColor $Theme.Warn
+    }
 }
