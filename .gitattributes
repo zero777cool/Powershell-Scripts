@@ -1,0 +1,23 @@
+# Normalise line endings: stored as LF in the repo, no CRLF/LF churn between Windows and Linux.
+* text=auto
+
+# Windows scripts check out with CRLF on every machine
+*.ps1  text eol=crlf
+*.psm1 text eol=crlf
+*.psd1 text eol=crlf
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+
+# Unix scripts must stay LF
+*.sh   text eol=lf
+
+# Binary files: never touch
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.pdf  binary
+*.zip  binary
+*.xlsx binary
+*.docx binary
